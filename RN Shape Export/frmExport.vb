@@ -167,23 +167,25 @@ Public Class frmExport
         Dim acDoc As Document = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument
         Dim acCurDb As Database = acDoc.Database
         Dim acEd As Editor = acDoc.Editor
-        Using acTrans As Transaction = acCurDb.TransactionManager.StartTransaction()
-            Dim acLyrTbl As LayerTable
-            acLyrTbl = acTrans.GetObject(acCurDb.LayerTableId, OpenMode.ForWrite)
-            If sc.GetLayers(layerNames) Then
-                For Each layerName In layerNames
-                    If layerName = sLayer Then
-                        'overslaan deze moet actief blijven
-                    Else
-                        Dim acLyrTblRec As LayerTableRecord = acTrans.GetObject(acLyrTbl(sLayer), OpenMode.ForWrite)
+        Using acLockDoc As DocumentLock = acDoc.LockDocument()
+            Using acTrans As Transaction = acCurDb.TransactionManager.StartTransaction()
+                Dim acLyrTbl As LayerTable
+                acLyrTbl = acTrans.GetObject(acCurDb.LayerTableId, OpenMode.ForWrite)
+                If sc.GetLayers(layerNames) Then
+                    For Each layerName In layerNames
+                        If layerName = sLayer Then
+                            'overslaan deze moet actief blijven
+                        Else
+                            Dim acLyrTblRec As LayerTableRecord = acTrans.GetObject(acLyrTbl(sLayer), OpenMode.ForWrite)
 
-                        '' Freeze the layer
-                        acLyrTblRec.IsFrozen = True
-                    End If
+                            '' Freeze the layer
+                            acLyrTblRec.IsFrozen = True
+                        End If
 
-                Next
-            End If
-            acTrans.Commit()
+                    Next
+                End If
+                acTrans.Commit()
+            End Using
         End Using
     End Sub
 
@@ -191,29 +193,31 @@ Public Class frmExport
         Dim acDoc As Document = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument
         Dim acCurDb As Database = acDoc.Database
         Dim acEd As Editor = acDoc.Editor
-        Using acTrans As Transaction = acCurDb.TransactionManager.StartTransaction()
-            Dim acLyrTbl As LayerTable
-            acLyrTbl = acTrans.GetObject(acCurDb.LayerTableId, OpenMode.ForRead)
-            Dim acLyrTblRec As LayerTableRecord = acTrans.GetObject(acLyrTbl(sLayer), OpenMode.ForWrite)
+        Using acLockDoc As DocumentLock = acDoc.LockDocument()
+            Using acTrans As Transaction = acCurDb.TransactionManager.StartTransaction()
+                Dim acLyrTbl As LayerTable
+                acLyrTbl = acTrans.GetObject(acCurDb.LayerTableId, OpenMode.ForRead)
+                Dim acLyrTblRec As LayerTableRecord = acTrans.GetObject(acLyrTbl(sLayer), OpenMode.ForWrite)
 
-            '' Freeze the layer
-            acLyrTblRec.IsFrozen = False
+                '' Freeze the layer
+                acLyrTblRec.IsFrozen = False
 
-            acCurDb.Clayer() = acLyrTbl(sLayer)
-            acTrans.Commit()
+                acCurDb.Clayer() = acLyrTbl(sLayer)
+                acTrans.Commit()
 
-            'select all objects on layer
-            Dim tvs As TypedValue() = New TypedValue(0) {New TypedValue(CInt(DxfCode.LayerName), sLayer)}
-            Dim sf As SelectionFilter = New SelectionFilter(tvs)
-            Dim psr As PromptSelectionResult = acEd.SelectAll(sf)
-            If psr.Status = PromptStatus.OK Then
-                Dim oObjectIDS As ObjectIdCollection = New ObjectIdCollection(psr.Value.GetObjectIds())
+                'select all objects on layer
+                Dim tvs As TypedValue() = New TypedValue(0) {New TypedValue(CInt(DxfCode.LayerName), sLayer)}
+                Dim sf As SelectionFilter = New SelectionFilter(tvs)
+                Dim psr As PromptSelectionResult = acEd.SelectAll(sf)
+                If psr.Status = PromptStatus.OK Then
+                    Dim oObjectIDS As ObjectIdCollection = New ObjectIdCollection(psr.Value.GetObjectIds())
 
 
 
-            Else
+                Else
 
-            End If
+                End If
+            End Using
         End Using
     End Sub
 
