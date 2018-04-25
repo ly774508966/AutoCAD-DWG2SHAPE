@@ -126,7 +126,8 @@ Public Class frmExport
             Me.Hide()
             'set focus to modal space
             Autodesk.AutoCAD.Internal.Utils.SetFocusToDwgView()
-            RHB()
+            'RHB()
+            LoopLayers()
             Me.Show()
         End If
     End Sub
@@ -137,10 +138,53 @@ Public Class frmExport
         If sc.GetLayers(layerNames) Then
             Dim layerName As String = Nothing
             For Each layerName In layerNames
+                If layerName = "0" Or layerName = "Defpoints" Then
 
-
+                Else
+                    FreezeLayers(layerName)
+                    Exit Sub
+                End If
             Next
         End If
+    End Sub
+
+    '    Public Sub SendHatchBack()
+    '        Dim fType(0 To 1) As Integer
+    '        Dim fData(0 To 1) As Variant
+    '        fType(0) = 0 : fData(0) = "HATCH"
+    '        fType(1) = 8 : fData(1) = "0"
+
+    '        With ThisDrawing.PickfirstSelectionSet
+    '            .Clear
+    '            .Select acSelectionSetAll, , , fType, fData
+    'If .Count > 0 Then ThisDrawing.SendCommand("._DrawOrder _Previous
+    '_Back ")
+    '        End With
+    '    End Sub
+    Public Sub FreezeLayers(sLayer As String)
+        Dim sc As ImportExportCommands = New ImportExportCommands()
+        Dim layerNames As StringCollection = New StringCollection()
+        Dim acDoc As Document = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument
+        Dim acCurDb As Database = acDoc.Database
+        Dim acEd As Editor = acDoc.Editor
+        Using acTrans As Transaction = acCurDb.TransactionManager.StartTransaction()
+            Dim acLyrTbl As LayerTable
+            acLyrTbl = acTrans.GetObject(acCurDb.LayerTableId, OpenMode.ForWrite)
+            If sc.GetLayers(layerNames) Then
+                For Each layerName In layerNames
+                    If layerName = sLayer Then
+                        'overslaan deze moet actief blijven
+                    Else
+                        Dim acLyrTblRec As LayerTableRecord = acTrans.GetObject(acLyrTbl(sLayer), OpenMode.ForWrite)
+
+                        '' Freeze the layer
+                        acLyrTblRec.IsFrozen = True
+                    End If
+
+                Next
+            End If
+            acTrans.Commit()
+        End Using
     End Sub
 
     Public Sub convertHatch(sLayer As String)
@@ -150,6 +194,11 @@ Public Class frmExport
         Using acTrans As Transaction = acCurDb.TransactionManager.StartTransaction()
             Dim acLyrTbl As LayerTable
             acLyrTbl = acTrans.GetObject(acCurDb.LayerTableId, OpenMode.ForRead)
+            Dim acLyrTblRec As LayerTableRecord = acTrans.GetObject(acLyrTbl(sLayer), OpenMode.ForWrite)
+
+            '' Freeze the layer
+            acLyrTblRec.IsFrozen = False
+
             acCurDb.Clayer() = acLyrTbl(sLayer)
             acTrans.Commit()
 
