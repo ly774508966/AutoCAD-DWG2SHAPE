@@ -35,6 +35,7 @@ Partial Class frmExport
         Me.textBoxExpFile = New System.Windows.Forms.TextBox()
         Me.Label2 = New System.Windows.Forms.Label()
         Me.Label1 = New System.Windows.Forms.Label()
+        Me.cmdHatchToBoundary = New System.Windows.Forms.Button()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -59,7 +60,7 @@ Partial Class frmExport
         '
         Me.GroupBox1.Controls.Add(Me.radioButtonDiffLayers)
         Me.GroupBox1.Controls.Add(Me.radioButtonAllToOne)
-        Me.GroupBox1.Location = New System.Drawing.Point(6, 182)
+        Me.GroupBox1.Location = New System.Drawing.Point(12, 206)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Size = New System.Drawing.Size(336, 88)
         Me.GroupBox1.TabIndex = 17
@@ -86,7 +87,7 @@ Partial Class frmExport
         '
         'checkBoxExpOD
         '
-        Me.checkBoxExpOD.Location = New System.Drawing.Point(14, 142)
+        Me.checkBoxExpOD.Location = New System.Drawing.Point(20, 166)
         Me.checkBoxExpOD.Name = "checkBoxExpOD"
         Me.checkBoxExpOD.Size = New System.Drawing.Size(240, 24)
         Me.checkBoxExpOD.TabIndex = 16
@@ -94,7 +95,7 @@ Partial Class frmExport
         '
         'buttonLogFile
         '
-        Me.buttonLogFile.Location = New System.Drawing.Point(270, 100)
+        Me.buttonLogFile.Location = New System.Drawing.Point(276, 124)
         Me.buttonLogFile.Name = "buttonLogFile"
         Me.buttonLogFile.Size = New System.Drawing.Size(72, 24)
         Me.buttonLogFile.TabIndex = 15
@@ -102,7 +103,7 @@ Partial Class frmExport
         '
         'buttonExpFile
         '
-        Me.buttonExpFile.Location = New System.Drawing.Point(270, 28)
+        Me.buttonExpFile.Location = New System.Drawing.Point(276, 70)
         Me.buttonExpFile.Name = "buttonExpFile"
         Me.buttonExpFile.Size = New System.Drawing.Size(72, 24)
         Me.buttonExpFile.TabIndex = 13
@@ -110,7 +111,7 @@ Partial Class frmExport
         '
         'textBoxLogFile
         '
-        Me.textBoxLogFile.Location = New System.Drawing.Point(14, 102)
+        Me.textBoxLogFile.Location = New System.Drawing.Point(20, 126)
         Me.textBoxLogFile.Name = "textBoxLogFile"
         Me.textBoxLogFile.ReadOnly = True
         Me.textBoxLogFile.Size = New System.Drawing.Size(248, 20)
@@ -118,7 +119,7 @@ Partial Class frmExport
         '
         'textBoxExpFile
         '
-        Me.textBoxExpFile.Location = New System.Drawing.Point(14, 30)
+        Me.textBoxExpFile.Location = New System.Drawing.Point(20, 72)
         Me.textBoxExpFile.Name = "textBoxExpFile"
         Me.textBoxExpFile.ReadOnly = True
         Me.textBoxExpFile.Size = New System.Drawing.Size(248, 20)
@@ -127,7 +128,7 @@ Partial Class frmExport
         'Label2
         '
         Me.Label2.AutoSize = True
-        Me.Label2.Location = New System.Drawing.Point(6, 78)
+        Me.Label2.Location = New System.Drawing.Point(12, 102)
         Me.Label2.Name = "Label2"
         Me.Label2.Size = New System.Drawing.Size(140, 13)
         Me.Label2.TabIndex = 11
@@ -136,17 +137,27 @@ Partial Class frmExport
         'Label1
         '
         Me.Label1.AutoSize = True
-        Me.Label1.Location = New System.Drawing.Point(6, 6)
+        Me.Label1.Location = New System.Drawing.Point(12, 48)
         Me.Label1.Name = "Label1"
         Me.Label1.Size = New System.Drawing.Size(110, 13)
         Me.Label1.TabIndex = 10
         Me.Label1.Text = "Export Bestandsnaam"
+        '
+        'cmdHatchToBoundary
+        '
+        Me.cmdHatchToBoundary.Location = New System.Drawing.Point(14, 8)
+        Me.cmdHatchToBoundary.Name = "cmdHatchToBoundary"
+        Me.cmdHatchToBoundary.Size = New System.Drawing.Size(333, 31)
+        Me.cmdHatchToBoundary.TabIndex = 20
+        Me.cmdHatchToBoundary.Text = "Arceringen omzetten naar Boundary"
+        Me.cmdHatchToBoundary.UseVisualStyleBackColor = True
         '
         'frmExport
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(363, 347)
+        Me.Controls.Add(Me.cmdHatchToBoundary)
         Me.Controls.Add(Me.buttonCancel)
         Me.Controls.Add(Me.buttonOK)
         Me.Controls.Add(Me.GroupBox1)
@@ -182,4 +193,5 @@ Partial Class frmExport
     Friend WithEvents textBoxExpFile As Windows.Forms.TextBox
     Friend WithEvents Label2 As Windows.Forms.Label
     Friend WithEvents Label1 As Windows.Forms.Label
+    Friend WithEvents cmdHatchToBoundary As Windows.Forms.Button
 End Class
