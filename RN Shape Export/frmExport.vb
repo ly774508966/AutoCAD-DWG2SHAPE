@@ -34,6 +34,7 @@ Imports Autodesk.AutoCAD.DatabaseServices
 Imports Autodesk.AutoCAD.EditorInput
 Imports Autodesk.AutoCAD.Geometry
 Imports RN_Shape_Export.ImportExport
+Imports GeometryExtensions
 
 Public Class frmExport
     Dim acDoc As Document = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument
@@ -261,13 +262,15 @@ Public Class frmExport
                         TextBox1.Update()
                         Me.Update()
                     Catch ex As Exception
-                        TextBox1.AppendText("EXCEPTION FOT LAYER: " & tmpLayer & vbCr)
+                        TextBox1.AppendText("EXCEPTION FOR LAYER: " & tmpLayer & vbCr)
                         TextBox1.Update()
                         Me.Update()
                     End Try
                 Next
                 '' Save the changes and dispose of the transaction
                 acTrans.Commit()
+                acEd.ApplyCurDwgLayerTableChanges()
+                acDoc.SendStringToExecute("REGENALL" & vbCr, True, False, True)
             End Using
         End Using
         listLayerState()
@@ -277,7 +280,7 @@ Public Class frmExport
     Public Function listLayerState()
         Using acLockDoc As DocumentLock = acDoc.LockDocument()
             '' Start a transaction
-            TextBox1.AppendText("$$$$$ Layer State List: " & vbCrLf)
+            TextBox1.AppendText("$$$$$ Layer State List: " & currLayer.ToUpper & vbCrLf)
             Using acTrans As Transaction = acCurDb.TransactionManager.StartTransaction()
                 '' Open the Layer table for read
                 Dim LayerTable As LayerTable = acTrans.GetObject(acCurDb.LayerTableId, OpenMode.ForWrite)
@@ -454,140 +457,119 @@ Public Class frmExport
         RemoveHandlers()
     End Sub
 
-
-
-
     Public Sub RHB()
-        'Source: https://forums.autodesk.com/t5/net/restore-hatch-boundaries-if-they-have-been-lost-with-net/m-p/3779514#M33429
-        Dim doc As Document = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument
+        'source: https://forums.autodesk.com/t5/net/restore-hatch-boundaries-if-they-have-been-lost-with-net/m-p/3786748#M33601
+        Dim doc As Document = acDoc
         Dim ed As Editor = doc.Editor
-        Dim prOps As PromptEntityOptions = New PromptEntityOptions("" & vbLf & "Select Hatch: ")
-        prOps.SetRejectMessage("" & vbLf & "Not a Hatch")
+        Dim prOps As PromptEntityOptions = New PromptEntityOptions(vbLf & "Select Hatch: ")
+        prOps.SetRejectMessage(vbLf & "Not a Hatch")
         prOps.AddAllowedClass(GetType(Hatch), False)
         Dim prRes As PromptEntityResult = ed.GetEntity(prOps)
-        If (prRes.Status <> PromptStatus.OK) Then
-            Return
-        End If
-
-
-        Using acLockDoc As DocumentLock = doc.LockDocument()
-            Dim tr As Transaction = doc.TransactionManager.StartTransaction
-            Dim hatch As Hatch = CType(tr.GetObject(prRes.ObjectId, OpenMode.ForRead), Hatch)
-            If (Not (hatch) Is Nothing) Then
-                Dim btr As BlockTableRecord = CType(tr.GetObject(hatch.OwnerId, OpenMode.ForWrite), BlockTableRecord)
-                If (btr Is Nothing) Then
-                    Return
-                End If
-
-                Dim plane As Plane = hatch.GetPlane
+        If prRes.Status <> PromptStatus.OK Then Return
+        Dim oIdColl As ObjectIdCollection = New ObjectIdCollection()
+        Dim bIsPolyBound As Boolean = False
+        Using tr As Transaction = doc.TransactionManager.StartTransaction()
+            Dim hatch As Hatch = TryCast(tr.GetObject(prRes.ObjectId, OpenMode.ForRead), Hatch)
+            If hatch IsNot Nothing Then
+                Dim btr As BlockTableRecord = TryCast(tr.GetObject(hatch.OwnerId, OpenMode.ForWrite), BlockTableRecord)
+                If btr Is Nothing Then Return
+                Dim plane As Plane = hatch.GetPlane()
                 Dim nLoops As Integer = hatch.NumberOfLoops
-                Dim i As Integer = 0
-                Do While (i < nLoops)
-                    Dim Hloop As HatchLoop = hatch.GetLoopAt(i)
-                    If Hloop.IsPolyline Then
-                        Dim poly As Polyline = New Polyline
-                        Dim iVertex As Integer = 0
-                        For Each bv As BulgeVertex In Hloop.Polyline
-                            poly.AddVertexAt(iVertex, bv.Vertex, bv.Bulge, 0, 0)
-                            iVertex = iVertex + 1
-                        Next
-                        btr.AppendEntity(poly)
-                        tr.AddNewlyCreatedDBObject(poly, True)
+                For i As Integer = 0 To nLoops - 1
+                    Dim [loop] As HatchLoop = hatch.GetLoopAt(i)
+                    If [loop].IsPolyline Then
+                        Using poly As Polyline = New Polyline()
+                            Dim iVertex As Integer = 0
+                            For Each bv As BulgeVertex In [loop].Polyline
+                                poly.AddVertexAt(Math.Min(System.Threading.Interlocked.Increment(iVertex), iVertex - 1), bv.Vertex, bv.Bulge, 0, 0)
+                            Next
+                            btr.AppendEntity(poly)
+                            tr.AddNewlyCreatedDBObject(poly, True)
+                            oIdColl.Add(btr.ObjectId)
+                        End Using
                     Else
-                        For Each cv As Curve2d In Hloop.Curves
-                            'Dim line2d As LineSegment2d = Nothing
-                            'Dim arc2d As CircularArc2d = Nothing
-                            'Dim ellipse2d As EllipticalArc2d = Nothing
-                            'Dim spline2d As NurbCurve2d = Nothing
-                            'Try
-                            '    line2d = CType(cv, LineSegment2d)
-                            '    arc2d = CType(cv, CircularArc2d)
-                            '    ellipse2d = CType(cv, EllipticalArc2d)
-                            '    spline2d = CType(cv, NurbCurve2d)
-                            'Catch ex As Exception
-
-                            'End Try
+                        For Each cv As Curve2d In [loop].Curves
                             Dim line2d As LineSegment2d = TryCast(cv, LineSegment2d)
                             Dim arc2d As CircularArc2d = TryCast(cv, CircularArc2d)
                             Dim ellipse2d As EllipticalArc2d = TryCast(cv, EllipticalArc2d)
                             Dim spline2d As NurbCurve2d = TryCast(cv, NurbCurve2d)
-                            If (Not (line2d) Is Nothing) Then
-                                Dim ent As Line = New Line
-                                ent.StartPoint = New Point3d(plane, line2d.StartPoint)
-                                ent.EndPoint = New Point3d(plane, line2d.EndPoint)
-                                btr.AppendEntity(ent)
-                                tr.AddNewlyCreatedDBObject(ent, True)
-                            ElseIf (Not (arc2d) Is Nothing) Then
-                                If (Math.Abs((arc2d.StartAngle - arc2d.EndAngle)) < 0.00001) Then
-                                    Dim ent As Circle = New Circle(New Point3d(plane, arc2d.Center), plane.Normal, arc2d.Radius)
+                            If line2d IsNot Nothing Then
+                                Using ent As Line = New Line()
+                                    ent.StartPoint = New Point3d(plane, line2d.StartPoint)
+                                    ent.EndPoint = New Point3d(plane, line2d.EndPoint)
                                     btr.AppendEntity(ent)
                                     tr.AddNewlyCreatedDBObject(ent, True)
+                                    oIdColl.Add(btr.ObjectId)
+                                End Using
+                            ElseIf arc2d IsNot Nothing Then
+                                If Math.Abs(arc2d.StartAngle - arc2d.EndAngle) < 0.00001 Then
+                                    Using ent As Circle = New Circle(New Point3d(plane, arc2d.Center), plane.Normal, arc2d.Radius)
+                                        btr.AppendEntity(ent)
+                                        tr.AddNewlyCreatedDBObject(ent, True)
+                                    End Using
                                 Else
-                                    Dim angle As Double = (New Vector3d(plane, arc2d.ReferenceVector).AngleOnPlane(plane))
-                                    Dim ent As Arc = New Arc(New Point3d(plane, arc2d.Center), arc2d.Radius, (arc2d.StartAngle + angle), (arc2d.EndAngle + angle))
+                                    Dim angle As Double = New Vector3d(plane, arc2d.ReferenceVector).AngleOnPlane(plane)
+                                    Using ent As Arc = New Arc(New Point3d(plane, arc2d.Center), arc2d.Radius, arc2d.StartAngle + angle, arc2d.EndAngle + angle)
+                                        btr.AppendEntity(ent)
+                                        tr.AddNewlyCreatedDBObject(ent, True)
+                                        oIdColl.Add(btr.ObjectId)
+                                    End Using
+                                End If
+                            ElseIf ellipse2d IsNot Nothing Then
+                                Using ent As Ellipse = New Ellipse(New Point3d(plane, ellipse2d.Center), plane.Normal, New Vector3d(plane, ellipse2d.MajorAxis) * ellipse2d.MajorRadius, ellipse2d.MinorRadius / ellipse2d.MajorRadius, ellipse2d.StartAngle, ellipse2d.EndAngle)
+                                    ent.[GetType]().InvokeMember("StartParam", BindingFlags.SetProperty, Nothing, ent, New Object() {ellipse2d.StartAngle})
+                                    ent.[GetType]().InvokeMember("EndParam", BindingFlags.SetProperty, Nothing, ent, New Object() {ellipse2d.EndAngle})
                                     btr.AppendEntity(ent)
                                     tr.AddNewlyCreatedDBObject(ent, True)
-                                End If
-
-                            ElseIf (Not (ellipse2d) Is Nothing) Then
-                                '-------------------------------------------------------------------------------------------
-                                ' Bug: Can not assign StartParam and EndParam of Ellipse:
-                                ' Ellipse ent = new Ellipse(new Point3d(plane, e2d.Center), plane.Normal, 
-                                '      new Vector3d(plane,e2d.MajorAxis) * e2d.MajorRadius,
-                                '      e2d.MinorRadius / e2d.MajorRadius, e2d.StartAngle, e2d.EndAngle);
-                                ' ent.StartParam = e2d.StartAngle; 
-                                ' ent.EndParam = e2d.EndAngle;
-                                ' error CS0200: Property or indexer 'Autodesk.AutoCAD.DatabaseServices.Curve.StartParam' cannot be assigned to -- it is read only
-                                ' error CS0200: Property or indexer 'Autodesk.AutoCAD.DatabaseServices.Curve.EndParam' cannot be assigned to -- it is read only
-                                '---------------------------------------------------------------------------------------------
-                                ' Workaround is using Reflection
-                                ' 
-                                Dim ent As Ellipse = New Ellipse(New Point3d(plane, ellipse2d.Center), plane.Normal, (New Vector3d(plane, ellipse2d.MajorAxis) * ellipse2d.MajorRadius), (ellipse2d.MinorRadius / ellipse2d.MajorRadius), ellipse2d.StartAngle, ellipse2d.EndAngle)
-                                ent.GetType.InvokeMember("StartParam", BindingFlags.SetProperty, Nothing, ent, New Object() {ellipse2d.StartAngle})
-                                ent.GetType.InvokeMember("EndParam", BindingFlags.SetProperty, Nothing, ent, New Object() {ellipse2d.EndAngle})
-                                btr.AppendEntity(ent)
-                                tr.AddNewlyCreatedDBObject(ent, True)
-                            ElseIf (Not (spline2d) Is Nothing) Then
+                                    oIdColl.Add(btr.ObjectId)
+                                End Using
+                            ElseIf spline2d IsNot Nothing Then
                                 If spline2d.HasFitData Then
                                     Dim n2fd As NurbCurve2dFitData = spline2d.FitData
-                                    Dim p3ds As Point3dCollection = New Point3dCollection
-                                    For Each p As Point2d In n2fd.FitPoints
-                                        p3ds.Add(New Point3d(plane, p))
-                                    Next
-                                    Dim ent As Spline = New Spline(p3ds, New Vector3d(plane, n2fd.StartTangent), New Vector3d(plane, n2fd.EndTangent), n2fd.Degree, n2fd.FitTolerance.EqualPoint)
-                                    btr.AppendEntity(ent)
-                                    tr.AddNewlyCreatedDBObject(ent, True)
+                                    Using p3ds As Point3dCollection = New Point3dCollection()
+                                        For Each p As Point2d In n2fd.FitPoints
+                                            p3ds.Add(New Point3d(plane, p))
+                                        Next
+
+                                        Using ent As Spline = New Spline(p3ds, New Vector3d(plane, n2fd.StartTangent), New Vector3d(plane, n2fd.EndTangent), n2fd.Degree, n2fd.FitTolerance.EqualPoint)
+                                            btr.AppendEntity(ent)
+                                            tr.AddNewlyCreatedDBObject(ent, True)
+                                            oIdColl.Add(btr.ObjectId)
+                                        End Using
+                                    End Using
                                 Else
                                     Dim n2fd As NurbCurve2dData = spline2d.DefinitionData
-                                    Dim p3ds As Point3dCollection = New Point3dCollection
-                                    Dim knots As DoubleCollection = New DoubleCollection(n2fd.Knots.Count)
-                                    For Each p As Point2d In n2fd.ControlPoints
-                                        p3ds.Add(New Point3d(plane, p))
-                                    Next
-                                    For Each k As Double In n2fd.Knots
-                                        knots.Add(k)
-                                    Next
-                                    Dim period As Double = 0
-                                    Dim ent As Spline = New Spline(n2fd.Degree, n2fd.Rational, spline2d.IsClosed, spline2d.IsPeriodic(period), p3ds, knots, n2fd.Weights, n2fd.Knots.Tolerance, n2fd.Knots.Tolerance)
-                                    btr.AppendEntity(ent)
-                                    tr.AddNewlyCreatedDBObject(ent, True)
+                                    Using p3ds As Point3dCollection = New Point3dCollection()
+                                        Dim knots As DoubleCollection = New DoubleCollection(n2fd.Knots.Count)
+                                        For Each p As Point2d In n2fd.ControlPoints
+                                            p3ds.Add(New Point3d(plane, p))
+                                        Next
+
+                                        For Each k As Double In n2fd.Knots
+                                            knots.Add(k)
+                                        Next
+
+                                        Dim period As Double = 0
+                                        Using ent As Spline = New Spline(n2fd.Degree, n2fd.Rational, spline2d.IsClosed(), spline2d.IsPeriodic(period), p3ds, knots, n2fd.Weights, n2fd.Knots.Tolerance, n2fd.Knots.Tolerance)
+                                            btr.AppendEntity(ent)
+                                            tr.AddNewlyCreatedDBObject(ent, True)
+                                            oIdColl.Add(btr.ObjectId)
+                                        End Using
+                                    End Using
                                 End If
-
                             End If
-
                         Next
                     End If
-
-                    i = (i + 1)
-                Loop
-
+                Next
             End If
 
             tr.Commit()
         End Using
     End Sub
 
-    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
 
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        RHB()
     End Sub
 End Class
