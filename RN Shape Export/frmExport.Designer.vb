@@ -1,9 +1,9 @@
-﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()> _
+﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class frmExport
     Inherits System.Windows.Forms.Form
 
     'Form overrides dispose to clean up the component list.
-    <System.Diagnostics.DebuggerNonUserCode()> _
+    <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(ByVal disposing As Boolean)
         Try
             If disposing AndAlso components IsNot Nothing Then
@@ -20,7 +20,7 @@ Partial Class frmExport
     'NOTE: The following procedure is required by the Windows Form Designer
     'It can be modified using the Windows Form Designer.  
     'Do not modify it using the code editor.
-    <System.Diagnostics.DebuggerStepThrough()> _
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmExport))
         Me.buttonCancel = New System.Windows.Forms.Button()
@@ -36,8 +36,7 @@ Partial Class frmExport
         Me.Label2 = New System.Windows.Forms.Label()
         Me.Label1 = New System.Windows.Forms.Label()
         Me.cmdHatchToBoundary = New System.Windows.Forms.Button()
-        Me.TextBox1 = New System.Windows.Forms.TextBox()
-        Me.Button1 = New System.Windows.Forms.Button()
+        Me.cmdSweep = New System.Windows.Forms.Button()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -154,31 +153,21 @@ Partial Class frmExport
         Me.cmdHatchToBoundary.Text = "Arceringen omzetten naar Boundary"
         Me.cmdHatchToBoundary.UseVisualStyleBackColor = True
         '
-        'TextBox1
+        'cmdSweep
         '
-        Me.TextBox1.Location = New System.Drawing.Point(389, 73)
-        Me.TextBox1.Multiline = True
-        Me.TextBox1.Name = "TextBox1"
-        Me.TextBox1.ScrollBars = System.Windows.Forms.ScrollBars.Both
-        Me.TextBox1.Size = New System.Drawing.Size(318, 254)
-        Me.TextBox1.TabIndex = 21
-        '
-        'Button1
-        '
-        Me.Button1.Location = New System.Drawing.Point(623, 16)
-        Me.Button1.Name = "Button1"
-        Me.Button1.Size = New System.Drawing.Size(75, 23)
-        Me.Button1.TabIndex = 22
-        Me.Button1.Text = "Button1"
-        Me.Button1.UseVisualStyleBackColor = True
+        Me.cmdSweep.Location = New System.Drawing.Point(18, 361)
+        Me.cmdSweep.Name = "cmdSweep"
+        Me.cmdSweep.Size = New System.Drawing.Size(157, 23)
+        Me.cmdSweep.TabIndex = 21
+        Me.cmdSweep.Text = "Sweep Solids"
+        Me.cmdSweep.UseVisualStyleBackColor = True
         '
         'frmExport
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(719, 347)
-        Me.Controls.Add(Me.Button1)
-        Me.Controls.Add(Me.TextBox1)
+        Me.ClientSize = New System.Drawing.Size(363, 434)
+        Me.Controls.Add(Me.cmdSweep)
         Me.Controls.Add(Me.cmdHatchToBoundary)
         Me.Controls.Add(Me.buttonCancel)
         Me.Controls.Add(Me.buttonOK)
@@ -215,6 +204,5 @@ Partial Class frmExport
     Friend WithEvents Label2 As Windows.Forms.Label
     Friend WithEvents Label1 As Windows.Forms.Label
     Friend WithEvents cmdHatchToBoundary As Windows.Forms.Button
-    Friend WithEvents TextBox1 As Windows.Forms.TextBox
-    Friend WithEvents Button1 As Windows.Forms.Button
+    Friend WithEvents cmdSweep As Windows.Forms.Button
 End Class
