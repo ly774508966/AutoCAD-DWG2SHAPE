@@ -315,4 +315,116 @@
     '    commandFailled = True
     '    RemoveHandlers()
     'End Sub
+
+    'Public Sub CreateSweepCurb(Optional dBreedte As Double = 0.2, Optional dHoogte As Double = 0.2)
+    '    'set focus to modal space
+    '    'Autodesk.AutoCAD.Internal.Utils.SetFocusToDwgView()
+    '    Dim dStartX As Double
+    '    Dim dStartY As Double
+    '    Using acLockDoc As DocumentLock = acDoc.LockDocument()
+    '        '' Start a transaction
+    '        Dim per As PromptEntityResult
+    '        Dim peo2 As PromptEntityOptions = New PromptEntityOptions(vbLf & "Select path along which to sweep: ")
+    '        peo2.SetRejectMessage(vbLf & "Entity must be a curve.")
+    '        peo2.AddAllowedClass(GetType(Curve), False)
+    '        per = acEd.GetEntity(peo2)
+    '        Using acTrans As Transaction = acCurDb.TransactionManager.StartTransaction()
+    '            Dim sweepEnt As Entity = TryCast(acTrans.GetObject(per.ObjectId, OpenMode.ForRead), Entity)
+    '            Dim pathEnt As Curve = TryCast(acTrans.GetObject(per.ObjectId, OpenMode.ForRead), Curve)
+    '            Dim acBlkTbl As BlockTable = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForWrite)
+    '            Dim acBlkTblRec As BlockTableRecord = acTrans.GetObject(acBlkTbl(BlockTableRecord.ModelSpace), OpenMode.ForWrite)
+
+    '            Dim bandPL As Polyline = New Polyline()
+    '            dStartX = pathEnt.StartPoint.X
+    '            dStartY = pathEnt.StartPoint.Y
+    '            bandPL.AddVertexAt(0, New Point2d(dStartX, dStartY), 0, 0, 0)
+    '            bandPL.AddVertexAt(1, New Point2d(dStartX - (dBreedte / 2), dStartY), 0, 0, 0)
+    '            bandPL.AddVertexAt(2, New Point2d(dStartX - (dBreedte / 2), dStartY + dHoogte), 0, 0, 0)
+    '            bandPL.AddVertexAt(3, New Point2d(dStartX + (dBreedte / 2), dStartY + dHoogte), 0, 0, 0)
+    '            bandPL.AddVertexAt(4, New Point2d(dStartX + (dBreedte / 2), dStartY), 0, 0, 0)
+    '            bandPL.AddVertexAt(5, New Point2d(dStartX, dStartY), 0, 0, 0)
+
+    '            Dim band3D As New Solid3d()
+    '            Dim sob As SweepOptionsBuilder = New SweepOptionsBuilder()
+    '            sob.Align = SweepOptionsAlignOption.AlignSweepEntityToPath
+    '            sob.BasePoint = pathEnt.StartPoint
+    '            sob.Bank = True
+    '            band3D.CreateSweptSolid(bandPL, pathEnt, sob.ToSweepOptions())
+    '            acBlkTblRec.AppendEntity(band3D)
+    '            acTrans.AddNewlyCreatedDBObject(band3D, True)
+    '            acTrans.Commit()
+    '            MsgBox("Sweep voltooid")
+    '        End Using
+    '    End Using
+
+    'End Sub
+
+    'Public Sub SweepAlongPath()
+    '    'set focus to modal space
+    '    Autodesk.AutoCAD.Internal.Utils.SetFocusToDwgView()
+    '    Using acLockDoc As DocumentLock = acDoc.LockDocument()
+    '        Dim doc As Document = acDoc
+    '        Dim db As Database = doc.Database
+    '        Dim ed As Editor = doc.Editor
+    '        Dim peo1 As PromptEntityOptions = New PromptEntityOptions(vbLf & "Select profile or curve to sweep: ")
+    '        peo1.SetRejectMessage(vbLf & "Entity must be a region, curve or planar surface.")
+    '        peo1.AddAllowedClass(GetType(Region), False)
+    '        peo1.AddAllowedClass(GetType(Curve), False)
+    '        peo1.AddAllowedClass(GetType(PlaneSurface), False)
+    '        Dim per As PromptEntityResult = ed.GetEntity(peo1)
+    '        If per.Status <> PromptStatus.OK Then Return
+    '        Dim regId As ObjectId = per.ObjectId
+    '        Dim peo2 As PromptEntityOptions = New PromptEntityOptions(vbLf & "Select path along which to sweep: ")
+    '        peo2.SetRejectMessage(vbLf & "Entity must be a curve.")
+    '        peo2.AddAllowedClass(GetType(Curve), False)
+    '        per = ed.GetEntity(peo2)
+    '        If per.Status <> PromptStatus.OK Then Return
+    '        Dim splId As ObjectId = per.ObjectId
+    '        Dim pko As PromptKeywordOptions = New PromptKeywordOptions(vbLf & "Sweep a solid or a surface?")
+    '        pko.AllowNone = True
+    '        pko.Keywords.Add("SOlid")
+    '        pko.Keywords.Add("SUrface")
+    '        pko.Keywords.[Default] = "SOlid"
+    '        Dim pkr As PromptResult = ed.GetKeywords(pko)
+    '        Dim createSolid As Boolean = (pkr.StringResult = "SOlid")
+    '        If pkr.Status <> PromptStatus.OK Then Return
+    '        Dim tr As Transaction = db.TransactionManager.StartTransaction()
+    '        Using tr
+    '            Try
+    '                Dim sweepEnt As Entity = TryCast(tr.GetObject(regId, OpenMode.ForRead), Entity)
+    '                Dim pathEnt As Curve = TryCast(tr.GetObject(splId, OpenMode.ForRead), Curve)
+    '                If sweepEnt Is Nothing OrElse pathEnt Is Nothing Then
+    '                    ed.WriteMessage(vbLf & "Problem opening the selected entities.")
+    '                    Return
+    '                End If
+
+    '                Dim sob As SweepOptionsBuilder = New SweepOptionsBuilder()
+    '                sob.Align = SweepOptionsAlignOption.AlignSweepEntityToPath
+    '                sob.BasePoint = pathEnt.StartPoint
+    '                sob.Bank = True
+    '                Dim ent As Entity
+    '                If createSolid Then
+    '                    Dim sol As Solid3d = New Solid3d()
+    '                    sol.CreateSweptSolid(sweepEnt, pathEnt, sob.ToSweepOptions())
+    '                    ent = sol
+    '                Else
+    '                    Dim ss As SweptSurface = New SweptSurface()
+    '                    ss.CreateSweptSurface(sweepEnt, pathEnt, sob.ToSweepOptions())
+    '                    ent = ss
+    '                End If
+
+    '                Dim bt As BlockTable = CType(tr.GetObject(db.BlockTableId, OpenMode.ForRead), BlockTable)
+    '                Dim ms As BlockTableRecord = CType(tr.GetObject(bt(BlockTableRecord.ModelSpace), OpenMode.ForWrite), BlockTableRecord)
+    '                Dim acBlkTbl As BlockTable = tr.GetObject(acCurDb.BlockTableId, OpenMode.ForWrite)
+    '                Dim acBlkTblRec As BlockTableRecord = tr.GetObject(acBlkTbl(BlockTableRecord.ModelSpace), OpenMode.ForWrite)
+    '                'ms.AppendEntity(ent)
+    '                acBlkTblRec.AppendEntity(ent)
+    '                tr.AddNewlyCreatedDBObject(ent, True)
+    '                tr.Commit()
+    '            Catch
+    '            End Try
+    '        End Using
+    '    End Using
+    'End Sub
+
 End Module
