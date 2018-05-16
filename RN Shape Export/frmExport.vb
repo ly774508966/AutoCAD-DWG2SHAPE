@@ -339,14 +339,13 @@ Public Class frmExport
     End Function
 
     Private Sub cmdSweep_Click(sender As Object, e As EventArgs) Handles cmdSweep.Click
-        'SweepAlongPath()
-        'CreateSweepCurb()
         If txtHoogte.Text = "" Or txtBreedte.Text = "" Then
             MsgBox("Vul eerst een breedte en hoogte in!")
         Else
             If cmbLayer.Text = "" Then
                 MsgBox("Selecteer een te verwerken laag")
             Else
+
                 createSolidCurb(cmbLayer.Text)
             End If
         End If
@@ -361,16 +360,8 @@ Public Class frmExport
 
         Dim dBreedte As Double = CDbl(txtBreedte.Text.Replace(",", "."))
         Dim dHoogte As Double = CDbl(txtHoogte.Text.Replace(",", "."))
-        'For Each oId As ObjectId In oIds
-        'If CreateSweepCurb(oId, dBreedte, dHoogte) Then
-        '    'success
-        'Else
-        '    MsgBox("fout bij aanmaken 3D solid")
-        '    'fout
-        'End If
 
-        'Next
-        CreateSweepCurb(oIds, dBreedte, dHoogte)
+        CreateSweepCurb(oIds, sLayer, dBreedte, dHoogte)
         MsgBox("Aanmaken van 3D Bandenlijn voltooid!")
         Return True
     End Function
@@ -378,55 +369,68 @@ Public Class frmExport
     Public Function CreateSweepCurb(Optional dBreedte As Double = 0.2, Optional dHoogte As Double = 0.2)
         'set focus to modal space
         Autodesk.AutoCAD.Internal.Utils.SetFocusToDwgView()
-        'Try
-        Dim dStartX As Double
-        Dim dStartY As Double
-        Using acLockDoc As DocumentLock = acDoc.LockDocument()
-            '' Start a transaction
-            Dim per As PromptEntityResult
-            Dim peo2 As PromptEntityOptions = New PromptEntityOptions(vbLf & "Selecteer een Pad voor de Sweep: ")
-            peo2.SetRejectMessage(vbLf & "Object moet een lijn-object zijn.")
-            peo2.AddAllowedClass(GetType(Curve), False)
-            per = acEd.GetEntity(peo2)
-            Using acTrans As Transaction = acCurDb.TransactionManager.StartTransaction()
-                Dim sweepEnt As Entity = TryCast(acTrans.GetObject(per.ObjectId, OpenMode.ForRead), Entity)
-                Dim pathEnt As Curve = TryCast(acTrans.GetObject(per.ObjectId, OpenMode.ForRead), Curve)
-                'Dim pathEnt As Curve = TryCast(acTrans.GetObject(sweepEnt.ObjectId, OpenMode.ForRead), Curve)
-                Dim acBlkTbl As BlockTable = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForWrite)
-                Dim acBlkTblRec As BlockTableRecord = acTrans.GetObject(acBlkTbl(BlockTableRecord.ModelSpace), OpenMode.ForWrite)
+        Dim per As PromptEntityResult
+        Dim peo2 As PromptEntityOptions = New PromptEntityOptions(vbLf & "Selecteer een Pad voor de Sweep: ")
+        Try
+            Dim dStartX As Double
+            Dim dStartY As Double
+            Using acLockDoc As DocumentLock = acDoc.LockDocument()
+                '' Start a transaction
+                peo2.SetRejectMessage(vbLf & "Object moet een lijn-object zijn.")
+                peo2.AddAllowedClass(GetType(Curve), False)
+                per = acEd.GetEntity(peo2)
+                Using acTrans As Transaction = acCurDb.TransactionManager.StartTransaction()
+                    Dim sweepEnt As Entity = TryCast(acTrans.GetObject(per.ObjectId, OpenMode.ForRead), Entity)
+                    Dim pathEnt As Curve = TryCast(acTrans.GetObject(sweepEnt.ObjectId, OpenMode.ForRead), Curve)
+                    If sweepEnt Is Nothing OrElse pathEnt Is Nothing Then
+                        acEd.WriteMessage(vbLf & "Geselecteerde Object kon niet geopend worden! Laag gelockt?.")
+                    Else
 
-                Dim bandPL As Polyline = New Polyline()
-                dStartX = pathEnt.StartPoint.X
-                dStartY = pathEnt.StartPoint.Y
-                bandPL.AddVertexAt(0, New Point2d(dStartX, dStartY), 0, 0, 0)
-                bandPL.AddVertexAt(1, New Point2d(dStartX - (dBreedte / 2), dStartY), 0, 0, 0)
-                bandPL.AddVertexAt(2, New Point2d(dStartX - (dBreedte / 2), dStartY + dHoogte), 0, 0, 0)
-                bandPL.AddVertexAt(3, New Point2d(dStartX + (dBreedte / 2), dStartY + dHoogte), 0, 0, 0)
-                bandPL.AddVertexAt(4, New Point2d(dStartX + (dBreedte / 2), dStartY), 0, 0, 0)
-                bandPL.AddVertexAt(5, New Point2d(dStartX, dStartY), 0, 0, 0)
 
-                Dim band3D As New Solid3d()
-                Dim sob As SweepOptionsBuilder = New SweepOptionsBuilder()
-                sob.Align = SweepOptionsAlignOption.AlignSweepEntityToPath
-                sob.BasePoint = pathEnt.StartPoint
-                sob.Bank = True
-                band3D.CreateSweptSolid(bandPL, pathEnt, sob.ToSweepOptions())
-                acBlkTblRec.AppendEntity(band3D)
-                acTrans.AddNewlyCreatedDBObject(band3D, True)
-                acTrans.Commit()
+                        Dim acBlkTbl As BlockTable = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForWrite)
+                        Dim acBlkTblRec As BlockTableRecord = acTrans.GetObject(acBlkTbl(BlockTableRecord.ModelSpace), OpenMode.ForWrite)
+
+                        Dim bandPL As Polyline = New Polyline()
+                        dStartX = pathEnt.StartPoint.X
+                        dStartY = pathEnt.StartPoint.Y
+                        bandPL.AddVertexAt(0, New Point2d(dStartX, dStartY), 0, 0, 0)
+                        bandPL.AddVertexAt(1, New Point2d(dStartX - (dBreedte / 2), dStartY), 0, 0, 0)
+                        bandPL.AddVertexAt(2, New Point2d(dStartX - (dBreedte / 2), dStartY + dHoogte), 0, 0, 0)
+                        bandPL.AddVertexAt(3, New Point2d(dStartX + (dBreedte / 2), dStartY + dHoogte), 0, 0, 0)
+                        bandPL.AddVertexAt(4, New Point2d(dStartX + (dBreedte / 2), dStartY), 0, 0, 0)
+                        bandPL.Closed = True
+
+                        Dim band3D As New Solid3d()
+                        Dim sob As SweepOptionsBuilder = New SweepOptionsBuilder()
+                        sob.Align = SweepOptionsAlignOption.AlignSweepEntityToPath
+                        sob.BasePoint = bandPL.StartPoint
+                        sob.Bank = True
+
+                        band3D.CreateSweptSolid(bandPL, pathEnt, sob.ToSweepOptions())
+                        acBlkTblRec.AppendEntity(band3D)
+                        acTrans.AddNewlyCreatedDBObject(band3D, True)
+                        acTrans.Commit()
+                        acEd.Regen()
+                    End If
+                End Using
             End Using
-        End Using
-        Return True
-        'Catch ex As Autodesk.AutoCAD.Runtime.Exception
-        '    MsgBox(ex.Message)
-        '    Return False
-        'End Try
+            Return True
+        Catch ex As Autodesk.AutoCAD.Runtime.Exception
+            If SweepClosePolyline(per.ObjectId, dBreedte, dHoogte) = False Then
+                MsgBox("Er ging iets fout, probeer de lijn te exploderen en probeer het opnieuw!" & vbCrLf & ex.Message)
+                Me.BringToFront()
+                Return False
+            End If
+
+        End Try
+        Me.BringToFront()
     End Function
 
-    Public Function CreateSweepCurb(ByVal oOidColl As ObjectIdCollection, Optional dBreedte As Double = 0.2, Optional dHoogte As Double = 0.2)
+    Public Function CreateSweepCurb(ByVal oOidColl As ObjectIdCollection, ByVal sLayer As String, Optional dBreedte As Double = 0.2, Optional dHoogte As Double = 0.2)
         'set focus to modal space
         'Autodesk.AutoCAD.Internal.Utils.SetFocusToDwgView()
-        'Try
+        'set current layer
+        setCurrentLayer(sLayer)
         Dim dStartX As Double
         Dim dStartY As Double
         Using acLockDoc As DocumentLock = acDoc.LockDocument()
@@ -434,111 +438,119 @@ Public Class frmExport
                 Dim acBlkTbl As BlockTable = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForWrite)
                 Dim acBlkTblRec As BlockTableRecord = acTrans.GetObject(acBlkTbl(BlockTableRecord.ModelSpace), OpenMode.ForWrite)
                 For Each oOid As ObjectId In oOidColl
-                    Dim sweepEnt As Entity = TryCast(acTrans.GetObject(oOid, OpenMode.ForRead), Entity)
-                    'Dim pathEnt As Curve = TryCast(acTrans.GetObject(oOid, OpenMode.ForRead), Curve)
-                    Dim pathEnt As Curve = TryCast(acTrans.GetObject(sweepEnt.ObjectId, OpenMode.ForRead), Curve)
+                    Dim sweepEnt As Entity
+                    Dim pathEnt As Curve
+                    Dim bandPL As Polyline = New Polyline()
+                    Try
+                        sweepEnt = TryCast(acTrans.GetObject(oOid, OpenMode.ForRead), Entity)
+                        pathEnt = TryCast(acTrans.GetObject(sweepEnt.ObjectId, OpenMode.ForRead), Curve)
 
+                        dStartX = pathEnt.StartPoint.X
+                        dStartY = pathEnt.StartPoint.Y
+                        bandPL.AddVertexAt(0, New Point2d(dStartX, dStartY), 0, 0, 0)
+                        bandPL.AddVertexAt(1, New Point2d(dStartX - (dBreedte / 2), dStartY), 0, 0, 0)
+                        bandPL.AddVertexAt(2, New Point2d(dStartX - (dBreedte / 2), dStartY + dHoogte), 0, 0, 0)
+                        bandPL.AddVertexAt(3, New Point2d(dStartX + (dBreedte / 2), dStartY + dHoogte), 0, 0, 0)
+                        bandPL.AddVertexAt(4, New Point2d(dStartX + (dBreedte / 2), dStartY), 0, 0, 0)
+                        'bandPL.AddVertexAt(5, New Point2d(dStartX, dStartY), 0, 0, 0)
+                        bandPL.Closed = True
+
+                        Dim band3D As New Solid3d()
+                        Dim sob As SweepOptionsBuilder = New SweepOptionsBuilder()
+                        sob.Align = SweepOptionsAlignOption.AlignSweepEntityToPath
+                        sob.BasePoint = bandPL.StartPoint
+                        sob.Bank = True
+                        band3D.CreateSweptSolid(bandPL, pathEnt, sob.ToSweepOptions())
+                        acBlkTblRec.AppendEntity(band3D)
+                        acTrans.AddNewlyCreatedDBObject(band3D, True)
+                    Catch ex As Autodesk.AutoCAD.Runtime.Exception
+                        'fout, waarschijnlijk vanwege gesloten polyline
+                        'polyline omzetten naar lines en los sweepen
+                        If SweepClosePolyline(oOid, dBreedte, dHoogte) = False Then
+                            MsgBox("Er ging iets fout!" & vbCrLf & ex.Message)
+                        End If
+                    End Try
+                Next
+                acTrans.Commit()
+                acEd.Regen()
+            End Using
+        End Using
+        Return True
+    End Function
+
+    Public Function SweepClosePolyline(ByVal oOid As ObjectId, Optional dBreedte As Double = 0.2, Optional dHoogte As Double = 0.2)
+        Dim dStartX As Double
+        Dim dStartY As Double
+        Dim bExitLoop As Boolean = False
+        Using acLockDoc As DocumentLock = acDoc.LockDocument()
+            Using acTrans As Transaction = acCurDb.TransactionManager.StartTransaction()
+                Dim acBlkTbl As BlockTable = acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForWrite)
+                Dim acBlkTblRec As BlockTableRecord = acTrans.GetObject(acBlkTbl(BlockTableRecord.ModelSpace), OpenMode.ForWrite)
+
+                Dim plineSource As Polyline = TryCast(acTrans.GetObject(oOid, OpenMode.ForRead), Polyline)
+
+                For i As Integer = 0 To plineSource.NumberOfVertices - 1
+                    Dim pathEnt As Curve
+                    Dim sweLine As Line
+                    Dim type As String = "line"
+                    If plineSource.GetSegmentType(i) = SegmentType.Arc Then
+                        Dim tmpArc As CircularArc2d = plineSource.GetArcSegment2dAt(i)
+                        Dim nwArc As Arc = New Arc()
+                        nwArc.StartPoint = New Point3d(tmpArc.StartPoint.X, tmpArc.StartPoint.Y, 0)
+                        nwArc.EndPoint = New Point3d(tmpArc.EndPoint.X, tmpArc.EndPoint.Y, 0)
+                        nwArc.EndAngle = tmpArc.EndAngle
+                        nwArc.StartAngle = tmpArc.StartAngle
+                        nwArc.Radius = tmpArc.Radius
+                        nwArc.Center = New Point3d(tmpArc.Center.X, tmpArc.Center.Y, 0)
+                        pathEnt = TryCast(nwArc, Curve)
+                    ElseIf plineSource.GetSegmentType(i) = SegmentType.Line Then
+                        sweLine = New Line()
+                        Dim pStart As Point3d
+                        Dim pEind As Point3d
+                        If i = plineSource.NumberOfVertices - 1 Then
+                            pEind = plineSource.GetPoint3dAt(i)
+                            pStart = plineSource.GetPoint3dAt(0)
+                            bExitLoop = True
+                        Else
+                            pStart = plineSource.GetPoint3dAt(i)
+                            pEind = plineSource.GetPoint3dAt(i + 1)
+                        End If
+                        sweLine.StartPoint = pStart
+                        sweLine.EndPoint = pEind
+                        pathEnt = TryCast(sweLine, Curve)
+                    End If
 
                     Dim bandPL As Polyline = New Polyline()
-                    dStartX = pathEnt.StartPoint.X
-                    dStartY = pathEnt.StartPoint.Y
-                    bandPL.AddVertexAt(0, New Point2d(dStartX, dStartY), 0, 0, 0)
-                    bandPL.AddVertexAt(1, New Point2d(dStartX - (dBreedte / 2), dStartY), 0, 0, 0)
-                    bandPL.AddVertexAt(2, New Point2d(dStartX - (dBreedte / 2), dStartY + dHoogte), 0, 0, 0)
-                    bandPL.AddVertexAt(3, New Point2d(dStartX + (dBreedte / 2), dStartY + dHoogte), 0, 0, 0)
-                    bandPL.AddVertexAt(4, New Point2d(dStartX + (dBreedte / 2), dStartY), 0, 0, 0)
-                    bandPL.AddVertexAt(5, New Point2d(dStartX, dStartY), 0, 0, 0)
+                    Try
+                        dStartX = pathEnt.StartPoint.X
+                        dStartY = pathEnt.StartPoint.Y
+                        bandPL.AddVertexAt(0, New Point2d(dStartX, dStartY), 0, 0, 0)
+                        bandPL.AddVertexAt(1, New Point2d(dStartX - (dBreedte / 2), dStartY), 0, 0, 0)
+                        bandPL.AddVertexAt(2, New Point2d(dStartX - (dBreedte / 2), dStartY + dHoogte), 0, 0, 0)
+                        bandPL.AddVertexAt(3, New Point2d(dStartX + (dBreedte / 2), dStartY + dHoogte), 0, 0, 0)
+                        bandPL.AddVertexAt(4, New Point2d(dStartX + (dBreedte / 2), dStartY), 0, 0, 0)
+                        'bandPL.AddVertexAt(5, New Point2d(dStartX, dStartY), 0, 0, 0)
+                        bandPL.Closed = True
 
-                    Dim band3D As New Solid3d()
-                    Dim sob As SweepOptionsBuilder = New SweepOptionsBuilder()
-                    sob.Align = SweepOptionsAlignOption.AlignSweepEntityToPath
-                    sob.BasePoint = pathEnt.StartPoint
-                    sob.Bank = True
-                    band3D.CreateSweptSolid(bandPL, pathEnt, sob.ToSweepOptions())
-                    acBlkTblRec.AppendEntity(band3D)
-                    acTrans.AddNewlyCreatedDBObject(band3D, True)
+                        Dim band3D As New Solid3d()
+                        Dim sob As SweepOptionsBuilder = New SweepOptionsBuilder()
+                        sob.Align = SweepOptionsAlignOption.AlignSweepEntityToPath
+                        sob.BasePoint = bandPL.StartPoint
+                        sob.Bank = True
+                        band3D.CreateSweptSolid(bandPL, pathEnt, sob.ToSweepOptions())
+                        acBlkTblRec.AppendEntity(band3D)
+                        acTrans.AddNewlyCreatedDBObject(band3D, True)
+                        If bExitLoop = True Then Exit For
+                    Catch ex As Exception
+                        MsgBox(ex.Message)
+                    End Try
                 Next
                 acTrans.Commit()
             End Using
         End Using
         Return True
-        'Catch ex As Autodesk.AutoCAD.Runtime.Exception
-        '    MsgBox(ex.Message)
-        '    Return False
-        'End Try
     End Function
 
-    Public Sub SweepAlongPath()
-        'set focus to modal space
-        Autodesk.AutoCAD.Internal.Utils.SetFocusToDwgView()
-        Using acLockDoc As DocumentLock = acDoc.LockDocument()
-            Dim doc As Document = acDoc
-            Dim db As Database = doc.Database
-            Dim ed As Editor = doc.Editor
-            Dim peo1 As PromptEntityOptions = New PromptEntityOptions(vbLf & "Select profile or curve to sweep: ")
-            peo1.SetRejectMessage(vbLf & "Entity must be a region, curve or planar surface.")
-            peo1.AddAllowedClass(GetType(Region), False)
-            peo1.AddAllowedClass(GetType(Curve), False)
-            peo1.AddAllowedClass(GetType(PlaneSurface), False)
-            Dim per As PromptEntityResult = ed.GetEntity(peo1)
-            If per.Status <> PromptStatus.OK Then Return
-            Dim regId As ObjectId = per.ObjectId
-            Dim peo2 As PromptEntityOptions = New PromptEntityOptions(vbLf & "Select path along which to sweep: ")
-            peo2.SetRejectMessage(vbLf & "Entity must be a curve.")
-            peo2.AddAllowedClass(GetType(Curve), False)
-            per = ed.GetEntity(peo2)
-            If per.Status <> PromptStatus.OK Then Return
-            Dim splId As ObjectId = per.ObjectId
-            Dim pko As PromptKeywordOptions = New PromptKeywordOptions(vbLf & "Sweep a solid or a surface?")
-            pko.AllowNone = True
-            pko.Keywords.Add("SOlid")
-            pko.Keywords.Add("SUrface")
-            pko.Keywords.[Default] = "SOlid"
-            Dim pkr As PromptResult = ed.GetKeywords(pko)
-            Dim createSolid As Boolean = (pkr.StringResult = "SOlid")
-            If pkr.Status <> PromptStatus.OK Then Return
-            Dim tr As Transaction = db.TransactionManager.StartTransaction()
-            Using tr
-                Try
-                    Dim sweepEnt As Entity = TryCast(tr.GetObject(regId, OpenMode.ForRead), Entity)
-                    Dim pathEnt As Curve = TryCast(tr.GetObject(splId, OpenMode.ForRead), Curve)
-                    If sweepEnt Is Nothing OrElse pathEnt Is Nothing Then
-                        ed.WriteMessage(vbLf & "Problem opening the selected entities.")
-                        Return
-                    End If
-
-                    Dim sob As SweepOptionsBuilder = New SweepOptionsBuilder()
-                    sob.Align = SweepOptionsAlignOption.AlignSweepEntityToPath
-                    sob.BasePoint = pathEnt.StartPoint
-                    sob.Bank = True
-                    Dim ent As Entity
-                    If createSolid Then
-                        Dim sol As Solid3d = New Solid3d()
-                        sol.CreateSweptSolid(sweepEnt, pathEnt, sob.ToSweepOptions())
-                        ent = sol
-                    Else
-                        Dim ss As SweptSurface = New SweptSurface()
-                        ss.CreateSweptSurface(sweepEnt, pathEnt, sob.ToSweepOptions())
-                        ent = ss
-                    End If
-
-                    Dim bt As BlockTable = CType(tr.GetObject(db.BlockTableId, OpenMode.ForRead), BlockTable)
-                    Dim ms As BlockTableRecord = CType(tr.GetObject(bt(BlockTableRecord.ModelSpace), OpenMode.ForWrite), BlockTableRecord)
-                    Dim acBlkTbl As BlockTable = tr.GetObject(acCurDb.BlockTableId, OpenMode.ForWrite)
-                    Dim acBlkTblRec As BlockTableRecord = tr.GetObject(acBlkTbl(BlockTableRecord.ModelSpace), OpenMode.ForWrite)
-                    'ms.AppendEntity(ent)
-                    acBlkTblRec.AppendEntity(ent)
-                    tr.AddNewlyCreatedDBObject(ent, True)
-                    tr.Commit()
-                Catch
-                End Try
-            End Using
-        End Using
-    End Sub
-
-    Private Sub cmdSweepPath_Click(sender As Object, e As EventArgs)
-        SweepAlongPath()
-    End Sub
 
     Private Sub frmExport_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         loadLayers()
@@ -559,6 +571,21 @@ Public Class frmExport
         Else
             cmdSweep.Enabled = False
         End If
+    End Sub
+
+    Public Sub setCurrentLayer(ByVal sLayer As String)
+        Using acLockDoc As DocumentLock = acDoc.LockDocument()
+            '' Start a transaction
+            Using acTrans As Transaction = acCurDb.TransactionManager.StartTransaction()
+                '' Open the Layer table for read
+                Dim LayerTable As LayerTable = acTrans.GetObject(acCurDb.LayerTableId, OpenMode.ForRead)
+                If LayerTable.Has(sLayer) Then
+                    acCurDb.Clayer = LayerTable(sLayer)
+                End If
+                '' Save the changes and dispose of the transaction
+                acTrans.Commit()
+            End Using
+        End Using
     End Sub
 
     Public Function GetEntitiesOnLayer(ByVal layerName As String) As ObjectIdCollection
@@ -582,6 +609,12 @@ Public Class frmExport
     Private Sub cmdManual_Click(sender As Object, e As EventArgs) Handles cmdManual.Click
         Dim dBreedte As Double = CDbl(txtBreedte.Text.Replace(",", "."))
         Dim dHoogte As Double = CDbl(txtHoogte.Text.Replace(",", "."))
-        CreateSweepCurb(dBreedte, dHoogte)
+        CreateSweepCurb()
+
     End Sub
+
+
+
+
+
 End Class

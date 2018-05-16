@@ -38,14 +38,14 @@ Partial Class frmExport
         Me.cmdHatchToBoundary = New System.Windows.Forms.Button()
         Me.cmdSweep = New System.Windows.Forms.Button()
         Me.GroupBox2 = New System.Windows.Forms.GroupBox()
-        Me.cmbLayer = New System.Windows.Forms.ComboBox()
-        Me.Label3 = New System.Windows.Forms.Label()
-        Me.Label4 = New System.Windows.Forms.Label()
+        Me.cmdManual = New System.Windows.Forms.Button()
+        Me.cmdReloadLayers = New System.Windows.Forms.Button()
+        Me.txtHoogte = New System.Windows.Forms.TextBox()
         Me.txtBreedte = New System.Windows.Forms.TextBox()
         Me.Label5 = New System.Windows.Forms.Label()
-        Me.txtHoogte = New System.Windows.Forms.TextBox()
-        Me.cmdReloadLayers = New System.Windows.Forms.Button()
-        Me.cmdManual = New System.Windows.Forms.Button()
+        Me.Label4 = New System.Windows.Forms.Label()
+        Me.Label3 = New System.Windows.Forms.Label()
+        Me.cmbLayer = New System.Windows.Forms.ComboBox()
         Me.GroupBox1.SuspendLayout()
         Me.GroupBox2.SuspendLayout()
         Me.SuspendLayout()
@@ -58,7 +58,7 @@ Partial Class frmExport
         Me.buttonCancel.Name = "buttonCancel"
         Me.buttonCancel.Size = New System.Drawing.Size(120, 24)
         Me.buttonCancel.TabIndex = 19
-        Me.buttonCancel.Text = "Annuleren"
+        Me.buttonCancel.Text = "Sluiten"
         '
         'buttonOK
         '
@@ -191,32 +191,32 @@ Partial Class frmExport
         Me.GroupBox2.TabStop = False
         Me.GroupBox2.Text = "Layer omzetten naar 3D Bandenlijn"
         '
-        'cmbLayer
+        'cmdManual
         '
-        Me.cmbLayer.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
-        Me.cmbLayer.FormattingEnabled = True
-        Me.cmbLayer.Location = New System.Drawing.Point(8, 28)
-        Me.cmbLayer.Name = "cmbLayer"
-        Me.cmbLayer.Size = New System.Drawing.Size(296, 21)
-        Me.cmbLayer.TabIndex = 22
+        Me.cmdManual.Location = New System.Drawing.Point(8, 113)
+        Me.cmdManual.Name = "cmdManual"
+        Me.cmdManual.Size = New System.Drawing.Size(322, 23)
+        Me.cmdManual.TabIndex = 28
+        Me.cmdManual.Text = "Selecteer Object om naar 3D Solid om te zetten"
+        Me.cmdManual.UseVisualStyleBackColor = True
         '
-        'Label3
+        'cmdReloadLayers
         '
-        Me.Label3.AutoSize = True
-        Me.Label3.Location = New System.Drawing.Point(14, 59)
-        Me.Label3.Name = "Label3"
-        Me.Label3.Size = New System.Drawing.Size(78, 13)
-        Me.Label3.TabIndex = 23
-        Me.Label3.Text = "Afmeting band:"
+        Me.cmdReloadLayers.BackgroundImage = Global.RN_Shape_Export.My.Resources.Resources.refresh
+        Me.cmdReloadLayers.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
+        Me.cmdReloadLayers.Location = New System.Drawing.Point(308, 27)
+        Me.cmdReloadLayers.Name = "cmdReloadLayers"
+        Me.cmdReloadLayers.Size = New System.Drawing.Size(25, 25)
+        Me.cmdReloadLayers.TabIndex = 27
+        Me.cmdReloadLayers.UseVisualStyleBackColor = True
         '
-        'Label4
+        'txtHoogte
         '
-        Me.Label4.AutoSize = True
-        Me.Label4.Location = New System.Drawing.Point(98, 59)
-        Me.Label4.Name = "Label4"
-        Me.Label4.Size = New System.Drawing.Size(47, 13)
-        Me.Label4.TabIndex = 24
-        Me.Label4.Text = "Breedte:"
+        Me.txtHoogte.Location = New System.Drawing.Point(249, 56)
+        Me.txtHoogte.Name = "txtHoogte"
+        Me.txtHoogte.Size = New System.Drawing.Size(49, 20)
+        Me.txtHoogte.TabIndex = 26
+        Me.txtHoogte.Text = "0.1"
         '
         'txtBreedte
         '
@@ -235,32 +235,32 @@ Partial Class frmExport
         Me.Label5.TabIndex = 24
         Me.Label5.Text = "Hoogte:"
         '
-        'txtHoogte
+        'Label4
         '
-        Me.txtHoogte.Location = New System.Drawing.Point(249, 56)
-        Me.txtHoogte.Name = "txtHoogte"
-        Me.txtHoogte.Size = New System.Drawing.Size(49, 20)
-        Me.txtHoogte.TabIndex = 26
-        Me.txtHoogte.Text = "0.1"
+        Me.Label4.AutoSize = True
+        Me.Label4.Location = New System.Drawing.Point(98, 59)
+        Me.Label4.Name = "Label4"
+        Me.Label4.Size = New System.Drawing.Size(47, 13)
+        Me.Label4.TabIndex = 24
+        Me.Label4.Text = "Breedte:"
         '
-        'cmdReloadLayers
+        'Label3
         '
-        Me.cmdReloadLayers.BackgroundImage = Global.RN_Shape_Export.My.Resources.Resources.refresh
-        Me.cmdReloadLayers.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
-        Me.cmdReloadLayers.Location = New System.Drawing.Point(308, 27)
-        Me.cmdReloadLayers.Name = "cmdReloadLayers"
-        Me.cmdReloadLayers.Size = New System.Drawing.Size(25, 25)
-        Me.cmdReloadLayers.TabIndex = 27
-        Me.cmdReloadLayers.UseVisualStyleBackColor = True
+        Me.Label3.AutoSize = True
+        Me.Label3.Location = New System.Drawing.Point(14, 59)
+        Me.Label3.Name = "Label3"
+        Me.Label3.Size = New System.Drawing.Size(78, 13)
+        Me.Label3.TabIndex = 23
+        Me.Label3.Text = "Afmeting band:"
         '
-        'cmdManual
+        'cmbLayer
         '
-        Me.cmdManual.Location = New System.Drawing.Point(8, 113)
-        Me.cmdManual.Name = "cmdManual"
-        Me.cmdManual.Size = New System.Drawing.Size(75, 23)
-        Me.cmdManual.TabIndex = 28
-        Me.cmdManual.Text = "Pick Object"
-        Me.cmdManual.UseVisualStyleBackColor = True
+        Me.cmbLayer.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        Me.cmbLayer.FormattingEnabled = True
+        Me.cmbLayer.Location = New System.Drawing.Point(8, 28)
+        Me.cmbLayer.Name = "cmbLayer"
+        Me.cmbLayer.Size = New System.Drawing.Size(296, 21)
+        Me.cmbLayer.TabIndex = 22
         '
         'frmExport
         '
